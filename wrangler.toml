@@ -1,0 +1,16 @@
+name = "queryflare"
+main = "main.ts"
+compatibility_date = "2025-06-06"
+
+dev.port = 3000
+routes = [
+  { pattern = "queryflare.com", custom_domain = true }
+]
+
+[[durable_objects.bindings]]
+name = "DORM_NAMESPACE"
+class_name = "DORM"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DORM"]

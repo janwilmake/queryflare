@@ -1,0 +1,10 @@
+{
+  "name": "queryflare",
+  "dependencies": {
+    "stripeflare": "^0.0.25",
+    "sql-parser-cst": "^0.27.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250606.0"
+  }
+}
