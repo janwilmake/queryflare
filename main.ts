@@ -351,6 +351,8 @@ export default {
           `
               : ""
           }
+
+          <a href="${ctx.paymentLink}">Deposit</a>
         </body>
         </html>
       `;
