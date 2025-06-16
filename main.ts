@@ -281,7 +281,7 @@ export default {
             <strong>Query with curl:</strong>
             <pre>curl -X POST ${url.origin}/query/shared \\
   -H "Content-Type: application/json" \\
-  -H "Cookie: access_token=${user.access_token || "your_token_here"}" \\
+  -H "Authorization: Bearer ${user.access_token || "your_token_here"}" \\
   -d '{"sql": "SELECT COUNT(*) as total FROM sample_data"}'</pre>
           </div>
 
