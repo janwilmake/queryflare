@@ -37,27 +37,6 @@ const sharedDbMigrations = {
   ],
 };
 
-// User database migrations (extends default StripeUser)
-const userDbMigrations = {
-  1: [
-    `CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      email TEXT,
-      balance INTEGER DEFAULT 0,
-      card_fingerprint TEXT,
-      verified_email INTEGER DEFAULT 0,
-      access_token TEXT UNIQUE,
-      query_count INTEGER DEFAULT 0,
-      last_query_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`,
-    `CREATE INDEX IF NOT EXISTS idx_users_access_token ON users(access_token)`,
-    `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
-  ],
-};
-
 // SQL Parser utility to validate read-only queries
 function validateReadOnlyQuery(sql: string): {
   isValid: boolean;
@@ -66,13 +45,12 @@ function validateReadOnlyQuery(sql: string): {
   try {
     const cst = parse(sql, {
       dialect: "sqlite",
-      acceptUnsupportedGrammar: false,
     });
 
     // Walk through the CST to check for non-read operations
     let hasNonReadOperation = false;
     let errorMessage = "";
-
+    //@ts-ignore
     function checkNode(node: any): void {
       if (!node || typeof node !== "object") return;
 
@@ -135,7 +113,7 @@ function validateReadOnlyQuery(sql: string): {
 }
 
 // Create shared database client (singleton-like)
-function createSharedDbClient(env: Env, ctx: ExecutionContext): DORMClient {
+function createSharedDbClient(env: Env, ctx: ExecutionContext) {
   return createClient({
     doNamespace: env.DORM_NAMESPACE,
     version: "v1",
@@ -145,8 +123,10 @@ function createSharedDbClient(env: Env, ctx: ExecutionContext): DORMClient {
   });
 }
 
+type MyEnv = { MY_ENV_SECRET: string };
+
 export default {
-  fetch: withStripeflare<QueryUser>(
+  fetch: withStripeflare<MyEnv, QueryUser>(
     async (request, env, ctx) => {
       const { user, charge, client } = ctx;
       const url = new URL(request.url);
@@ -220,18 +200,6 @@ export default {
           const cursor = sharedClient.exec(data.sql, ...(data.params || []));
           const rows = Array.from(await cursor.raw());
 
-          // Update user's query statistics
-          await client
-            .exec(
-              `UPDATE users SET 
-              query_count = COALESCE(query_count, 0) + 1,
-              last_query_at = CURRENT_TIMESTAMP,
-              updated_at = CURRENT_TIMESTAMP
-             WHERE access_token = ?`,
-              user.access_token,
-            )
-            .toArray();
-
           // Return result in DORM-compatible format
           const result = {
             columns: cursor.columnNames,
@@ -265,12 +233,6 @@ export default {
         }
       }
 
-      // Default charge endpoint for testing
-      if (url.pathname === "/charge" && request.method === "POST") {
-        const result = await charge(100, false); // charge 1 dollar for testing
-        return new Response(JSON.stringify(result));
-      }
-
       // Default welcome page
       const html = `
         <!DOCTYPE html>
@@ -290,7 +252,7 @@ export default {
           
           <div class="user-info">
             <h3>User Status</h3>
-            <p><strong>Name:</strong> ${user.name || "Anonymous"}</p>
+            <p><strong>Email:</strong> ${user.email || "Anonymous"}</p>
             <p><strong>Balance:</strong> $${((user.balance || 0) / 100).toFixed(
               3,
             )}</p>
@@ -319,7 +281,7 @@ export default {
             <strong>Query with curl:</strong>
             <pre>curl -X POST ${url.origin}/query/shared \\
   -H "Content-Type: application/json" \\
-  -H "Cookie: access_token=your_token_here" \\
+  -H "Cookie: access_token=${user.access_token || "your_token_here"}" \\
   -d '{"sql": "SELECT COUNT(*) as total FROM sample_data"}'</pre>
           </div>
 
@@ -340,19 +302,14 @@ export default {
             <li>Queries are parsed and validated before execution</li>
           </ul>
 
-          ${
-            !user.access_token
-              ? `
           <div style="background: #ffe6e6; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h3>Authentication Required</h3>
             <p>You need to authenticate via Stripe payment to access the query endpoints.</p>
             <p><a href="/me">Click here to see authentication options</a></p>
-          </div>
-          `
-              : ""
-          }
-
           <a href="${ctx.paymentLink}">Deposit</a>
+          </div>
+       
+
         </body>
         </html>
       `;
@@ -361,9 +318,6 @@ export default {
         headers: { "Content-Type": "text/html" },
       });
     },
-    {
-      customMigrations: userDbMigrations,
-      version: "v1",
-    },
+    { version: "v2" },
   ),
-} satisfies ExportedHandler<Env>;
+};

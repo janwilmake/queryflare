@@ -1,8 +1,8 @@
 {
   "name": "queryflare",
   "dependencies": {
-    "stripeflare": "^0.0.25",
-    "sql-parser-cst": "^0.27.0"
+    "sql-parser-cst": "^0.27.0",
+    "stripeflare": "^0.0.32"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250606.0"
