@@ -306,7 +306,7 @@ export default {
             <h3>Authentication Required</h3>
             <p>You need to authenticate via Stripe payment to access the query endpoints.</p>
             <p><a href="/me">Click here to see authentication options</a></p>
-          <a href="${ctx.paymentLink}">Deposit</a>
+            <a href="${ctx.paymentLink}">Deposit</a>
           </div>
        
 

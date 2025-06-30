@@ -83,4 +83,4 @@ All query responses follow the DORM-compatible format:
 
 This implementation provides a secure, scalable pay-per-query database service that integrates seamlessly with Stripeflare's payment system and DORM's database capabilities.
 
-<!-- https://lmpify.com/httpsuithubcomn-fv5t1q0 -->
+<!-- https://letmeprompt.com/httpsuithubcomn-fv5t1q0 -->
